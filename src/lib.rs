@@ -1,9 +1,9 @@
 pub mod day_01;
 
+use regex::Regex;
 use std::collections::HashMap;
 use std::io::{self, BufRead};
 use std::{fs::File, path::Path};
-use regex::Regex;
 
 pub fn load_input_2_cols(input_file: &Path) -> Result<(Vec<i32>, Vec<i32>), String> {
     let lines = read_lines(input_file)
@@ -28,7 +28,6 @@ pub fn load_input_2_cols(input_file: &Path) -> Result<(Vec<i32>, Vec<i32>), Stri
                     Err(format!("Input Error: Line {line_num} in {input_file:?}: Expected two whitespace-separated ints, but got \"{line}\""))
                 }}
             })
-        // I wish I knew how to do this without allocating storage :/
         .collect::<Result<Vec<(i32, i32)>, String>>()?
         .into_iter()
         .unzip())

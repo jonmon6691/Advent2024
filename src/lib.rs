@@ -3,9 +3,9 @@ pub mod day_02;
 
 use regex::Regex;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::io::{self, BufRead};
 use std::{fs::File, path::Path};
-use std::fmt::Debug;
 
 pub fn load_input_vec_of_vecs(input_file: &Path) -> Result<Vec<Vec<i32>>, String> {
     let lines = read_lines(input_file)

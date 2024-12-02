@@ -5,6 +5,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::io::{self, BufRead};
 use std::{fs::File, path::Path};
+use std::fmt::Debug;
 
 pub fn load_input_vec_of_vecs(input_file: &Path) -> Result<Vec<Vec<i32>>, String> {
     let lines = read_lines(input_file)
@@ -67,6 +68,7 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
+/// For calculating min/max in a single pass
 pub struct VecStats {
     pub min: i32,
     pub max: i32,
@@ -92,4 +94,15 @@ impl VecStats {
         }
         ret
     }
+}
+
+/// Print a vec in a single row
+pub fn pvec<T>(v: &[T])
+where
+    T: Debug,
+{
+    for i in v {
+        print!("{i:?} ");
+    }
+    println!();
 }

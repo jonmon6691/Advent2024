@@ -1,20 +1,20 @@
 use std::path::Path;
 
 pub fn do_d01_1() -> Result<u32, String> {
-    let (mut team_a, mut team_b) = crate::load_input_2_cols(&Path::new("input/input01-1.txt"))?;
+    let (mut team_a, mut team_b) = crate::load_input_2_cols(Path::new("input/input01-1.txt"))?;
 
     team_a.sort();
     team_b.sort();
 
     Ok(team_a
         .into_iter()
-        .zip(team_b.into_iter())
+        .zip(team_b)
         .map(|(a, b)| a.abs_diff(b))
         .sum())
 }
 
 pub fn do_d01_2() -> Result<i32, String> {
-    let (team_a, team_b) = crate::load_input_2_cols(&Path::new("input/input01-1.txt"))?;
+    let (team_a, team_b) = crate::load_input_2_cols(Path::new("input/input01-1.txt"))?;
 
     let a_counts = crate::get_counts(&team_a);
     let b_counts = crate::get_counts(&team_b);

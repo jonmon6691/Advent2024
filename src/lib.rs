@@ -13,7 +13,7 @@ pub fn load_input_2_cols(input_file: &Path) -> Result<(Vec<i32>, Vec<i32>), Stri
     let line_parser = Regex::new(r"^\s*(\d+)\s+(\d+)\s*$").unwrap();
 
     Ok(lines
-        .flatten() // Handles the Result<line, _> TODO: What happens to the error?
+        .map_while(Result::ok) // Handles the Result<line, _> TODO: What happens to the error?
         .enumerate() // For line numbers in the error report
         .map(|(line_num, line)| {
             match line_parser.captures(&line) {
@@ -37,7 +37,7 @@ fn get_counts(data: &[i32]) -> HashMap<i32, isize> {
     let mut counts = HashMap::new();
     for num in data {
         counts
-            .entry(num.clone())
+            .entry(*num)
             .and_modify(|v| *v += 1)
             .or_insert(1);
     }

@@ -59,6 +59,16 @@ fn get_counts(data: &[i32]) -> HashMap<i32, isize> {
     counts
 }
 
+/// Return a new vec with all the elements of data but skip the i'th element.
+///
+/// Panics if i is not a valid index for data
+pub fn drop_i(data: &[i32], i: usize) -> Vec<i32> {
+    data.iter()
+        .enumerate()
+        .filter_map(|(j, v)| (j != i).then_some(*v))
+        .collect::<Vec<i32>>()
+}
+
 // From the Rust stdlib documentation
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
@@ -66,34 +76,6 @@ where
 {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
-}
-
-/// For calculating min/max in a single pass
-pub struct VecStats {
-    pub min: i32,
-    pub max: i32,
-}
-
-impl VecStats {
-    pub fn from_vec(input: &Vec<i32>) -> Option<Self> {
-        let mut ret: Option<VecStats> = None;
-        // Calculate min/max in one pass
-        for val in input {
-            match &mut ret {
-                None => {
-                    ret = Some(VecStats {
-                        min: *val,
-                        max: *val,
-                    });
-                }
-                Some(d) => {
-                    d.min = d.min.min(*val);
-                    d.max = d.max.max(*val);
-                }
-            }
-        }
-        ret
-    }
 }
 
 /// Print a vec in a single row

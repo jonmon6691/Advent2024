@@ -1,11 +1,23 @@
 pub mod day_01;
 pub mod day_02;
+pub mod day_03;
 
 use regex::Regex;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::io::{self, BufRead};
-use std::{fs::File, path::Path};
+use std::fs::File;
+use std::io::{self, BufRead, Read};
+use std::path::Path;
+
+pub fn load_input_utf8(input_file: &Path) -> Result<String, String> {
+    let file = File::open(input_file)
+        .map_err(|err| format!("Error: Can't open file \"{input_file:?}\" ({err})"))?;
+    let raw = io::BufReader::new(file)
+        .bytes()
+        .map_while(Result::ok)
+        .collect();
+    String::from_utf8(raw).map_err(|err| format!("Error: Unable to decode UTF8 ({err})"))
+}
 
 pub fn load_input_vec_of_vecs(input_file: &Path) -> Result<Vec<Vec<i32>>, String> {
     let lines = read_lines(input_file)

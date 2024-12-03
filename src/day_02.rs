@@ -13,7 +13,7 @@ fn check_safety(reading: &[i32]) -> bool {
     reading
         .iter()
         .tuple_windows()
-        .map(|(a, b)| {
+        .all(|(a, b)| {
             trend = trend.or(Some(b.cmp(a))); // .or is only taken on the first loop and sets trend to Some()thing
             match *b - *a {
                 -3..=-1 => trend == Some(Ordering::Less),
@@ -21,7 +21,6 @@ fn check_safety(reading: &[i32]) -> bool {
                 _ => false, // 0 or ABS(diff) > 3
             }
         })
-        .all(bool::into)
 }
 
 pub fn do_d02_1() -> Result<usize, String> {
@@ -40,8 +39,7 @@ pub fn do_d02_2() -> Result<usize, String> {
             .filter(|reading| {
                 check_safety(reading) // Check the nominal case (no deletions)
                     || (0..reading.len()) // OR try removing one level at a time until the reading passes (Probably not optimal)
-                        .map(|i| check_safety(&crate::drop_i(reading, i)))
-                        .any(bool::into)
+                        .any(|i| check_safety(&crate::drop_i(reading, i)))
             })
             .count(),
     )

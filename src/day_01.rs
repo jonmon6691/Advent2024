@@ -30,14 +30,12 @@ pub fn do_d01_2() -> Result<i32, String> {
 
 #[test]
 fn test_day_01_1() {
-    let ans = do_d01_1();
-    let day01_01_obfuscated_answer = ans.map(|answer| dbg!(answer) ^ 0x55555555);
-    assert_eq!(day01_01_obfuscated_answer, Ok(1432673504));
+    let obfuscated_answer = do_d01_1().map(|answer| dbg!(answer) ^ 0x55555555);
+    assert_eq!(obfuscated_answer, Ok(1432673504));
 }
 
 #[test]
 fn test_day_01_2() {
-    let ans = do_d01_2();
-    let day01_02_obfuscated_answer = ans.map(|answer| dbg!(answer) ^ 0x55555555);
-    assert_eq!(day01_02_obfuscated_answer, Ok(1419059134));
+    let obfuscated_answer = do_d01_2().map(|answer| dbg!(answer) ^ 0x55555555);
+    assert_eq!(obfuscated_answer, Ok(1419059134));
 }

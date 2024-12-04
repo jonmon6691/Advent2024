@@ -4,19 +4,15 @@ use std::{iter::once, path::Path};
 pub fn do_d04_1() -> Result<usize, String> {
     let og = &crate::load_input_utf8(Path::new("input/input_04.txt"))?;
     let spec = Regex::new(r"XMAS").expect("Invalid regex");
+    let ceps = Regex::new(r"SAMX").expect("Invalid regex");
     let line_len = og.lines().next().unwrap().len();
 
+    let mut matches = 0;
     // Count XMAS's
-    let mut matches = spec.captures_iter(og).count();
+    matches += spec.captures_iter(og).count();
+    matches += ceps.captures_iter(og).count();
 
-    // Mirror left-right
-    let flipped: String = og
-        .lines()
-        .map(|l| l.chars().rev().chain(once('\n')).collect::<String>())
-        .collect();
-    matches += spec.captures_iter(&flipped).count();
-
-    // rotate
+    // Rotate 90 degrees
     let rotated: String = (0..line_len)
         .map(|i| {
             og.chars()
@@ -27,13 +23,7 @@ pub fn do_d04_1() -> Result<usize, String> {
         })
         .collect();
     matches += spec.captures_iter(&rotated).count();
-
-    // Mirror left/right again
-    let flipped_and_rotated: String = rotated
-        .lines()
-        .map(|l| l.chars().rev().chain(once('\n')).collect::<String>())
-        .collect();
-    matches += spec.captures_iter(&flipped_and_rotated).count();
+    matches += ceps.captures_iter(&rotated).count();
 
     // Diagonalize
     let square: Vec<Vec<char>> = og.lines().map(|l| l.chars().collect()).collect();
@@ -50,13 +40,7 @@ pub fn do_d04_1() -> Result<usize, String> {
         })
         .collect();
     matches += spec.captures_iter(&diag).count();
-
-    // Mirror the diagonal
-    let diag: String = diag
-        .lines()
-        .map(|l| l.chars().rev().chain(once('\n')).collect::<String>())
-        .collect();
-    matches += spec.captures_iter(&diag).count();
+    matches += ceps.captures_iter(&diag).count();
 
     // Diagonalize the other way by mirroring first
     let square: Vec<Vec<char>> = og.lines().map(|l| l.chars().rev().collect()).collect();
@@ -73,13 +57,7 @@ pub fn do_d04_1() -> Result<usize, String> {
         })
         .collect();
     matches += spec.captures_iter(&diag).count();
-
-    // Mirror the diagonal
-    let diag: String = diag
-        .lines()
-        .map(|l| l.chars().rev().chain(once('\n')).collect::<String>())
-        .collect();
-    matches += spec.captures_iter(&diag).count();
+    matches += ceps.captures_iter(&diag).count();
 
     Ok(matches)
 }

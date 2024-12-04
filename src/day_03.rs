@@ -23,8 +23,8 @@ pub fn do_d03_2() -> Result<i32, String> {
                     * capture["a"].parse::<i32>().unwrap()
                     * capture["b"].parse::<i32>().unwrap(),
             ),
-            s if s.starts_with("don't") => (false, acc),
-            s if s.starts_with("do") => (true, acc),
+            "don't()" => (false, acc),
+            "do()" => (true, acc),
             _ => panic!(), // Can't get here with a proper regex
         })
         .1)

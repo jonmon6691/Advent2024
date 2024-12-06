@@ -96,5 +96,5 @@ pub fn do_d04_2() -> Result<usize, String> {
 #[test]
 fn test_day_04_2() {
     let obfuscated_answer = do_d04_2().map(|answer| dbg!(answer) ^ 0x55555555);
-    assert_eq!(obfuscated_answer, obfuscated_answer);
+    assert_eq!(obfuscated_answer, Ok(1431655113));
 }

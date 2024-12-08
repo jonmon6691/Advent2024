@@ -1,110 +1,14 @@
-use std::{cmp::Ordering, collections::HashSet, ops::Add, path::Path};
-
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
-struct Position {
-    x: i32,
-    y: i32,
-}
-
-impl Add for Position {
-    type Output = Position;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Position {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-        }
-    }
-}
-
-impl Position {
-    pub fn rot_kernel(self) -> Position {
-        match (self.x.cmp(&0), self.y.cmp(&0)) {
-            (Ordering::Less, Ordering::Equal) => Position { x: 0, y: -self.x },
-            (Ordering::Equal, Ordering::Greater) => Position { x: self.y, y: 0 },
-            (Ordering::Greater, Ordering::Equal) => Position { x: 0, y: -self.x },
-            (Ordering::Equal, Ordering::Less) => Position { x: self.y, y: 0 },
-            _ => panic!(),
-        }
-    }
-
-    pub fn check_grid(&self, g: &[Vec<char>]) -> Option<char> {
-        let x = match self.x {
-            ..0 => return None,
-            x => x,
-        } as usize;
-
-        let y = match self.y {
-            ..0 => return None,
-            y => y,
-        } as usize;
-
-        g.get(x).and_then(|row| row.get(y)).copied()
-    }
-}
-
-pub fn print_grid(g: &[Vec<char>]) {
-    for row in g.iter() {
-        for c in row.iter() {
-            print!("{}", c);
-        }
-        println!();
-    }
-}
+use std::{
+    collections::{HashMap, HashSet},
+    iter::once,
+    ops::Range,
+    path::Path,
+};
 
 pub fn do_d06_1() -> Result<usize, String> {
     let raw = crate::load_input_utf8(Path::new("input/input_06.txt"))?;
-    let mut guard: Option<Position> = None;
-    let mut grid: Vec<Vec<char>> = raw
-        .lines()
-        .enumerate()
-        .map(|(x, line)| {
-            line.chars()
-                .enumerate()
-                .map(|(y, c)| match c {
-                    '^' => {
-                        // Save the guard's position
-                        guard = Some(Position {
-                            x: x as i32,
-                            y: y as i32,
-                        });
-                        // Then replace them with an empty map cell
-                        '.'
-                    }
-                    c => c,
-                })
-                .collect()
-        })
-        .collect();
-
-    // No guard no problem
-    let guard = match guard {
-        Some(pos) => pos,
-        None => return Ok(0),
-    };
-
-    // Kernel control the direction the guard moves each iteration
-    let mut kernel = Position { x: -1, y: 0 };
-    let mut i = guard;
-    let mut visited: HashSet<Position> = HashSet::new();
-    visited.insert(guard);
-
-    loop {
-        match (i + kernel).check_grid(&grid) {
-            None => {
-                return Ok(visited.len());
-            }
-            Some('.') | Some('X') => {
-                i = i + kernel;
-                grid[i.x as usize][i.y as usize] = 'X';
-                visited.insert(i);
-            }
-            Some('#') => {
-                kernel = kernel.rot_kernel();
-            }
-            Some(_) => panic!(),
-        }
-    }
+    let grid = Grid::from_string(&raw)?;
+    Ok(HashSet::<Position>::from_iter(once(grid.guard).chain(grid.map(|step| step.guard))).len())
 }
 
 #[test]
@@ -113,13 +17,161 @@ fn test_day_06_1() {
     assert_eq!(obfuscated_answer, Ok(1431650694));
 }
 
-pub fn do_d06_2() -> Result<u32, String> {
-    Ok(0)
+pub fn do_d06_2() -> Result<usize, String> {
+    let raw = crate::load_input_utf8(Path::new("input/input_06.txt"))?;
+    let grid = Grid::from_string(&raw)?;
+
+    Ok(HashSet::<Position>::from_iter(
+        grid.clone()
+            .filter_map(|state| state.next_index())
+            .filter(|new_obj| !grid.obstacles.contains(new_obj))
+            .filter(|new_obj| {
+                let mut au = grid.clone();
+                au.obstacles.insert(*new_obj);
+                au.would_loop()
+            }),
+    )
+    .len())
 }
 
 #[test]
 fn test_day_06_2() {
     let obfuscated_answer = do_d06_2().map(|answer| dbg!(answer) ^ 0x55555555);
-    assert!(obfuscated_answer.is_ok());
-    assert_eq!(obfuscated_answer, obfuscated_answer);
+    assert_eq!(obfuscated_answer, Ok(1431654977));
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub struct Position {
+    x: usize,
+    y: usize,
+}
+
+impl Position {
+    pub fn moved(&self, dir: Direction) -> Option<Position> {
+        Some(match dir {
+            Direction::Up => Position { x: self.x.checked_sub(1)?, y: self.y },
+            Direction::Down => Position { x: self.x + 1, y: self.y },
+            Direction::Left => Position { x: self.x, y: self.y.checked_sub(1)? },
+            Direction::Right => Position { x: self.x, y: self.y + 1 },
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Grid {
+    guard: Position, // Current position
+    heading: Direction,    // Kernel aka direction
+    obstacles: HashSet<Position>,
+    collisions: HashSet<(Position, Direction)>,
+    x_max: Range<usize>,
+    y_max: Range<usize>,
+}
+
+impl Grid {
+    pub fn from_string(raw: &str) -> Result<Grid, String> {
+        let mut map: HashMap<char, HashSet<Position>> = HashMap::new();
+        for (x, line) in raw.lines().enumerate() {
+            for (y, c) in line.chars().enumerate() {
+                map.entry(c).or_default().insert(Position { x, y });
+            }
+        }
+
+        match map.get(&'^').map(HashSet::len) {
+            None | Some(0) => return Err("Error: No guard!".to_owned()),
+            Some(2..) => return Err("Error: More than one guard, You're cooked!".to_owned()),
+            Some(1) => {}
+        }
+
+        Ok(Grid {
+            guard: *map[&'^'].iter().next().unwrap(),
+            heading: Direction::Up,
+            obstacles: map[&'#'].clone(),
+            collisions: HashSet::new(),
+            x_max: 0..raw.lines().count(),
+            y_max: 0..raw.lines().last().unwrap().chars().count(),
+        })
+    }
+
+    pub fn print(&self) {
+        for x in self.x_max.clone() {
+            for y in self.y_max.clone() {
+                let i = Position { x, y };
+                match (i == self.guard, self.obstacles.contains(&i)) {
+                    (true, _) => print!("^"),
+                    (_, true) => print!("#"),
+                    _ => print!("."),
+                }
+            }
+            println!();
+        }
+    }
+
+    pub fn print_with_highlight(&self, hl: Position) {
+        for x in self.x_max.clone() {
+            for y in self.y_max.clone() {
+                let i = Position { x, y };
+                if i == hl {
+                    print!("O");
+                } else if i == self.guard {
+                    print!("^")
+                } else if self.obstacles.contains(&i) {
+                    print!("#")
+                } else {
+                    print!(".")
+                }
+            }
+            println!();
+        }
+    }
+
+    fn next_index(&self) -> Option<Position> {
+        let i = self.guard.moved(self.heading)?;
+        (self.x_max.contains(&i.x) && self.y_max.contains(&i.y)).then_some(i)
+    }
+
+    pub fn would_loop(&mut self) -> bool {
+        if let Some(final_state) = self.last() {
+            final_state.next_index().is_some()
+        } else {
+            false
+        }
+    }
+}
+
+impl Iterator for Grid {
+    type Item = Grid;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let i = self.next_index()?;
+        if self.obstacles.contains(&i) {
+            let collision = (i, self.heading);
+            if !self.collisions.insert(collision) {
+                // Loop detected!
+                return None;
+            };
+            self.heading = self.heading.turn();
+        } else {
+            self.guard = i;
+        };
+        Some(self.clone())
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl Direction {
+    pub fn turn(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Right,
+            Direction::Down => Direction::Left,
+            Direction::Left => Direction::Up,
+            Direction::Right => Direction::Down,
+        }
+    }
 }

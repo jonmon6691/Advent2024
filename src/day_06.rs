@@ -30,7 +30,7 @@ pub fn do_d06_2() -> Result<usize, String> {
         .collect();
 
     Ok(trials
-        .par_iter() // Parallelize the  search, one thread per trial
+        .par_iter() // Parallelize the search, one thread per trial
         .filter(|new_obj| grid.with_new_obstacle(**new_obj).would_loop())
         .count())
 }
@@ -89,20 +89,18 @@ impl Grid {
             }
         }
 
-        match map.get(&'^').map(HashSet::len) {
-            None | Some(0) => return Err("Error: No guard!".to_owned()),
-            Some(2..) => return Err("Error: More than one guard, You're cooked!".to_owned()),
-            Some(1) => {}
+        match map.get(&'^') {
+            None => Err("Error: No guard!".to_owned()),
+            Some(g) if g.len() > 1 => Err("Error: More than one guard, You're cooked!".to_owned()),
+            Some(g) => Ok(Grid {
+                guard: *g.iter().next().unwrap(),
+                heading: Direction::Up,
+                obstacles: map[&'#'].clone(),
+                collisions: HashSet::new(),
+                x_max: 0..raw.lines().count(),
+                y_max: 0..raw.lines().last().unwrap().chars().count(),
+            })
         }
-
-        Ok(Grid {
-            guard: *map[&'^'].iter().next().unwrap(),
-            heading: Direction::Up,
-            obstacles: map[&'#'].clone(),
-            collisions: HashSet::new(),
-            x_max: 0..raw.lines().count(),
-            y_max: 0..raw.lines().last().unwrap().chars().count(),
-        })
     }
 
     fn with_new_obstacle(&self, new_obj: Position) -> Self {

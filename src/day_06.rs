@@ -5,6 +5,8 @@ use std::{
     path::Path,
 };
 
+use rayon::prelude::*;
+
 pub fn do_d06_1() -> Result<usize, String> {
     let raw = crate::load_input_utf8(Path::new("input/input_06.txt"))?;
     let grid = Grid::from_string(&raw)?;
@@ -21,17 +23,17 @@ pub fn do_d06_2() -> Result<usize, String> {
     let raw = crate::load_input_utf8(Path::new("input/input_06.txt"))?;
     let grid = Grid::from_string(&raw)?;
 
-    Ok(HashSet::<Position>::from_iter(
-        grid.clone()
-            .filter_map(|state| state.next_index())
-            .filter(|new_obj| !grid.obstacles.contains(new_obj))
-            .filter(|new_obj| {
-                let mut au = grid.clone();
-                au.obstacles.insert(*new_obj);
-                au.would_loop()
-            }),
-    )
-    .len())
+    // Set of all positions the guard will occupy, essentially the result of part 1
+    let trials: Vec<Position> = HashSet::<Position>::from_iter(grid.clone().map(|step| step.guard))
+        .iter()
+        .copied()
+        .collect();
+
+    Ok(trials
+        .par_iter() // Parallelize the  search, one thread per trial
+        .filter(|new_obj| !grid.clone().obstacles.contains(new_obj))
+        .filter(|new_obj| grid.with_new_obstacle(**new_obj).would_loop())
+        .count())
 }
 
 #[test]
@@ -49,18 +51,30 @@ pub struct Position {
 impl Position {
     pub fn moved(&self, dir: Direction) -> Option<Position> {
         Some(match dir {
-            Direction::Up => Position { x: self.x.checked_sub(1)?, y: self.y },
-            Direction::Down => Position { x: self.x + 1, y: self.y },
-            Direction::Left => Position { x: self.x, y: self.y.checked_sub(1)? },
-            Direction::Right => Position { x: self.x, y: self.y + 1 },
+            Direction::Up => Position {
+                x: self.x.checked_sub(1)?,
+                y: self.y,
+            },
+            Direction::Down => Position {
+                x: self.x + 1,
+                y: self.y,
+            },
+            Direction::Left => Position {
+                x: self.x,
+                y: self.y.checked_sub(1)?,
+            },
+            Direction::Right => Position {
+                x: self.x,
+                y: self.y + 1,
+            },
         })
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Grid {
-    guard: Position, // Current position
-    heading: Direction,    // Kernel aka direction
+    guard: Position,
+    heading: Direction,
     obstacles: HashSet<Position>,
     collisions: HashSet<(Position, Direction)>,
     x_max: Range<usize>,
@@ -92,36 +106,10 @@ impl Grid {
         })
     }
 
-    pub fn print(&self) {
-        for x in self.x_max.clone() {
-            for y in self.y_max.clone() {
-                let i = Position { x, y };
-                match (i == self.guard, self.obstacles.contains(&i)) {
-                    (true, _) => print!("^"),
-                    (_, true) => print!("#"),
-                    _ => print!("."),
-                }
-            }
-            println!();
-        }
-    }
-
-    pub fn print_with_highlight(&self, hl: Position) {
-        for x in self.x_max.clone() {
-            for y in self.y_max.clone() {
-                let i = Position { x, y };
-                if i == hl {
-                    print!("O");
-                } else if i == self.guard {
-                    print!("^")
-                } else if self.obstacles.contains(&i) {
-                    print!("#")
-                } else {
-                    print!(".")
-                }
-            }
-            println!();
-        }
+    fn with_new_obstacle(&self, new_obj: Position) -> Self {
+        let mut new = self.clone();
+        new.obstacles.insert(new_obj);
+        new
     }
 
     fn next_index(&self) -> Option<Position> {

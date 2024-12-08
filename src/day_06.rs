@@ -31,7 +31,6 @@ pub fn do_d06_2() -> Result<usize, String> {
 
     Ok(trials
         .par_iter() // Parallelize the  search, one thread per trial
-        .filter(|new_obj| !grid.clone().obstacles.contains(new_obj))
         .filter(|new_obj| grid.with_new_obstacle(**new_obj).would_loop())
         .count())
 }

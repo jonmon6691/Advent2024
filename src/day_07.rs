@@ -1,10 +1,19 @@
 use itertools::{repeat_n, Itertools};
 use std::path::Path;
 
+use rayon::prelude::*;
+
 #[derive(Debug)]
 struct Equation {
     result: usize,
     inputs: Vec<usize>,
+}
+
+#[derive(Debug)]
+enum Operation {
+    Add,
+    Mul,
+    Concat,
 }
 
 fn load_equations(input_file: &str) -> Result<Vec<Equation>, String> {
@@ -35,34 +44,27 @@ fn load_equations(input_file: &str) -> Result<Vec<Equation>, String> {
         .collect()
 }
 
-#[derive(Debug)]
-enum Operation {
-    Add,
-    Mul,
+fn correctable(eq: &Equation) -> bool {
+    repeat_n([Operation::Add, Operation::Mul].iter(), eq.inputs.len() - 1)
+        .multi_cartesian_product()
+        .map(|op_trial| {
+            op_trial
+                .iter()
+                .zip(&eq.inputs[1..])
+                .fold(eq.inputs[0], |acc, (op, input)| match op {
+                    Operation::Add => acc + input,
+                    Operation::Mul => acc * input,
+                    _ => panic!(), // Can't get here unless the array above isn't covered
+                })
+        })
+        .any(|result| result == eq.result)
 }
 
 pub fn part_1() -> Result<usize, String> {
     let data = load_equations("input/input_07.txt")?;
     Ok(data
         .iter()
-        .filter_map(|eq| {
-            repeat_n(
-                vec![Operation::Add, Operation::Mul].iter(),
-                eq.inputs.len() - 1,
-            )
-            .multi_cartesian_product()
-            .map(|op_trial| {
-                op_trial
-                    .iter()
-                    .zip(&eq.inputs[1..])
-                    .fold(eq.inputs[0], |acc, (op, input)| match op {
-                        Operation::Add => acc + input,
-                        Operation::Mul => acc * input,
-                    })
-            })
-            .filter(|result| *result == eq.result)
-            .next()
-        })
+        .filter_map(|eq| correctable(eq).then_some(eq.result))
         .sum())
 }
 
@@ -72,20 +74,39 @@ fn test_part_1() {
     assert_eq!(obfuscated_answer, Ok(665034625230));
 }
 
-pub fn part_2() -> Result<usize, String> {
-    let _raw = crate::load_input_utf8(Path::new("input/input_06.txt"))?;
-    repeat_n(vec![Operation::Add, Operation::Mul].iter(), 3)
-        .multi_cartesian_product()
-        .for_each(|ops| {
-            dbg!(ops);
-        });
+fn concat_usize(a: usize, b: usize) -> usize {
+    format!("{}{}", a, b).parse().unwrap()
+}
 
-    Ok(0)
+fn correctable2(eq: &Equation) -> bool {
+    repeat_n(
+        [Operation::Add, Operation::Mul, Operation::Concat].iter(),
+        eq.inputs.len() - 1,
+    )
+    .multi_cartesian_product()
+    .map(|op_trial| {
+        op_trial
+            .iter()
+            .zip(&eq.inputs[1..])
+            .fold(eq.inputs[0], |acc, (op, input)| match op {
+                Operation::Add => acc + input,
+                Operation::Mul => acc * input,
+                Operation::Concat => concat_usize(acc, *input),
+            })
+    })
+    .any(|result| result == eq.result)
+}
+
+pub fn part_2() -> Result<usize, String> {
+    let data = load_equations("input/input_07.txt")?;
+    Ok(data
+        .par_iter()
+        .filter_map(|eq| correctable2(eq).then_some(eq.result))
+        .sum())
 }
 
 #[test]
 fn test_part_2() {
-    let obfuscated_answer = part_2().map(|answer| dbg!(answer) ^ 0x55555555);
-    assert!(obfuscated_answer.is_ok());
-    assert_eq!(obfuscated_answer, obfuscated_answer);
+    let obfuscated_answer = part_2().map(|answer| dbg!(answer) ^ 0x5555_5555_5555_5555);
+    assert_eq!(obfuscated_answer, Ok(6148874973171459244));
 }

@@ -103,3 +103,51 @@ where
     }
     println!();
 }
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub struct Position {
+    x: usize,
+    y: usize,
+}
+
+impl Position {
+    pub fn moved(&self, dir: Direction) -> Option<Position> {
+        Some(match dir {
+            Direction::Up => Position {
+                x: self.x.checked_sub(1)?,
+                y: self.y,
+            },
+            Direction::Down => Position {
+                x: self.x + 1,
+                y: self.y,
+            },
+            Direction::Left => Position {
+                x: self.x,
+                y: self.y.checked_sub(1)?,
+            },
+            Direction::Right => Position {
+                x: self.x,
+                y: self.y + 1,
+            },
+        })
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl Direction {
+    pub fn turn(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Right,
+            Direction::Down => Direction::Left,
+            Direction::Left => Direction::Up,
+            Direction::Right => Direction::Down,
+        }
+    }
+}

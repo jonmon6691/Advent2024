@@ -5,13 +5,6 @@ use std::{
 
 use itertools::Itertools;
 
-#[derive(Debug)]
-struct File {
-    id: usize,
-    size: usize,
-    offset: usize,
-}
-
 pub fn part_1() -> Result<usize, String> {
     let raw = crate::load_input_utf8(Path::new("input/input_09.txt"))?;
 
@@ -53,7 +46,7 @@ pub fn part_1() -> Result<usize, String> {
         .sum())
 }
 
-fn print_mem(mem: &Vec<Option<usize>>, head: usize, tail: usize) {
+fn _print_mem(mem: &Vec<Option<usize>>, head: usize, tail: usize) {
     for v in mem {
         match v {
             Some(id) => print!("{} ", id),
@@ -78,8 +71,38 @@ fn test_part_1() {
     assert_eq!(obfuscated_answer, obfuscated_answer);
 }
 
+#[derive(Debug, Clone, Copy)]
+struct File {
+    id: usize,
+    size: usize,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Data {
+    Used(File),
+    Free(usize),
+}
+
 pub fn part_2() -> Result<usize, String> {
-    let raw = crate::load_input_utf8(Path::new("input/input_06.txt"))?;
+    let raw = crate::load_input_utf8(Path::new("input/input_09_test.txt"))?;
+    let fstab = raw
+        .chars()
+        .chain(once('0'))
+        .map(|c| c.to_digit(10).unwrap() as usize)
+        .tuples()
+        .enumerate()
+        .map(|(i, (file, free))| [Data::Used(File { id: i, size: file }), Data::Free(free)])
+        .flatten()
+        .collect::<Vec<Data>>();
+
+    let mut head = 0;
+    let mut tail = fstab.len() - 1;
+
+    while head != tail {
+        head += 1;
+        tail -= 1;
+    }
+
     Ok(0)
 }
 

@@ -13,11 +13,10 @@ pub fn part_1() -> Result<usize, String> {
         .chain(once('0'))
         .tuples()
         .enumerate()
-        .map(|(i, (file, free))| {
+        .flat_map(|(i, (file, free))| {
             repeat_n(Some(i), file.to_digit(10).unwrap() as usize)
                 .chain(repeat_n(None, free.to_digit(10).unwrap() as usize))
         })
-        .flatten()
         .collect();
 
     let mut head = 0;
@@ -25,11 +24,11 @@ pub fn part_1() -> Result<usize, String> {
     while head != tail {
         // print_mem(&memory, head, tail);
         println!();
-        if memory[head] != None {
+        if memory[head].is_some() {
             head += 1;
             continue;
         }
-        if memory[tail] == None {
+        if memory[tail].is_none() {
             tail -= 1;
             continue;
         }
@@ -91,14 +90,13 @@ pub fn part_2() -> Result<usize, String> {
         .map(|c| c.to_digit(10).unwrap() as usize)
         .tuples()
         .enumerate()
-        .map(|(i, (file, free))| [Data::Used(File { id: i, size: file }), Data::Free(free)])
-        .flatten()
+        .flat_map(|(i, (file, free))| [Data::Used(File { id: i, size: file }), Data::Free(free)])
         .collect::<Vec<Data>>();
 
     let mut head = 0;
     let mut tail = fstab.len() - 1;
 
-    while head != tail {
+    while head < tail {
         head += 1;
         tail -= 1;
     }

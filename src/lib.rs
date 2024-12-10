@@ -6,6 +6,7 @@ pub mod day_05;
 pub mod day_06;
 pub mod day_07;
 pub mod day_09;
+pub mod day_10;
 
 use regex::Regex;
 use std::collections::HashMap;
@@ -132,6 +133,10 @@ impl Position {
                 y: self.y + 1,
             },
         })
+    }
+
+    pub fn distance(&self, other: &Position) -> usize {
+        self.x.abs_diff(other.x) + self.y.abs_diff(other.y)
     }
 }
 

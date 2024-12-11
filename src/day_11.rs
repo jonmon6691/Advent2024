@@ -1,4 +1,8 @@
-use std::{iter::once, path::Path};
+use std::{
+    collections::HashMap,
+    iter::{once, successors},
+    path::Path,
+};
 
 #[derive(Debug)]
 enum DecimalParity {
@@ -73,8 +77,36 @@ fn test_part_1() {
     assert_eq!(obfuscated_answer, Ok(1431727167));
 }
 
+fn blink(counts: &HashMap<usize, usize>) -> HashMap<usize, usize> {
+    let mut ret = HashMap::new();
+    for (val, count) in counts {
+        match DecimalParity::from(*val) {
+            DecimalParity::Odd(0) => *ret.entry(1).or_default() += count,
+            DecimalParity::Odd(n) => *ret.entry(n * 2024).or_default() += count,
+            DecimalParity::Even(l, r) => {
+                *ret.entry(l).or_default() += count;
+                *ret.entry(r).or_default() += count;
+            }
+        }
+    }
+    ret
+}
+
 pub fn part_2() -> Result<usize, String> {
-    Ok(0)
+    let counts = {
+        let mut counts: HashMap<usize, usize> = HashMap::new();
+        for val in load_stones()?.values {
+            *counts.entry(val).or_default() += 1;
+        }
+        counts
+    };
+
+    Ok(successors(Some(counts), |i| Some(blink(i)))
+        .nth(75)
+        .unwrap()
+        .values()
+        .copied()
+        .sum())
 }
 
 #[test]

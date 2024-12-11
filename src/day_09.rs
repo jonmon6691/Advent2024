@@ -70,43 +70,43 @@ fn test_part_1() {
     assert_eq!(obfuscated_answer, obfuscated_answer);
 }
 
-#[derive(Debug, Clone, Copy)]
-struct File {
-    id: usize,
-    size: usize,
-}
+// #[derive(Debug, Clone, Copy)]
+// struct File {
+//     id: usize,
+//     size: usize,
+// }
 
-#[derive(Debug, Clone, Copy)]
-enum Data {
-    Used(File),
-    Free(usize),
-}
+// #[derive(Debug, Clone, Copy)]
+// enum Data {
+//     Used(File),
+//     Free(usize),
+// }
 
-pub fn part_2() -> Result<usize, String> {
-    let raw = crate::load_input_utf8(Path::new("input/input_09_test.txt"))?;
-    let fstab = raw
-        .chars()
-        .chain(once('0'))
-        .map(|c| c.to_digit(10).unwrap() as usize)
-        .tuples()
-        .enumerate()
-        .flat_map(|(i, (file, free))| [Data::Used(File { id: i, size: file }), Data::Free(free)])
-        .collect::<Vec<Data>>();
+// pub fn part_2() -> Result<usize, String> {
+//     let raw = crate::load_input_utf8(Path::new("input/input_09_test.txt"))?;
+//     let fstab = raw
+//         .chars()
+//         .chain(once('0'))
+//         .map(|c| c.to_digit(10).unwrap() as usize)
+//         .tuples()
+//         .enumerate()
+//         .flat_map(|(i, (file, free))| [Data::Used(File { id: i, size: file }), Data::Free(free)])
+//         .collect::<Vec<Data>>();
 
-    let mut head = 0;
-    let mut tail = fstab.len() - 1;
+//     let mut head = 0;
+//     let mut tail = fstab.len() - 1;
 
-    while head < tail {
-        head += 1;
-        tail -= 1;
-    }
+//     while head < tail {
+//         head += 1;
+//         tail -= 1;
+//     }
 
-    Ok(0)
-}
+//     Ok(0)
+// }
 
-#[test]
-fn test_part_2() {
-    let obfuscated_answer = part_2().map(|answer| dbg!(answer) ^ 0x55555555);
-    assert!(obfuscated_answer.is_ok());
-    assert_eq!(obfuscated_answer, obfuscated_answer);
-}
+// #[test]
+// fn test_part_2() {
+//     let obfuscated_answer = part_2().map(|answer| dbg!(answer) ^ 0x55555555);
+//     assert!(obfuscated_answer.is_ok());
+//     assert_eq!(obfuscated_answer, obfuscated_answer);
+// }
